@@ -1,0 +1,1027 @@
+(setq load-path (cons  "~/site-lisp" load-path))
+
+(setq visible-bell t)
+
+(setq inhibit-startup-message t)
+
+(setq message-log-max 512)
+
+(setq column-number-mode t)
+
+(setq transient-mark-mode t)    ;highlights selections
+
+(global-hl-line-mode 1)
+
+;; To customize the background color
+(set-face-background 'hl-line "#222")  ;; Emacs 22 Only
+
+(set-frame-parameter (selected-frame) 'alpha '(85 50))
+(add-to-list 'default-frame-alist '(alpha 85 50))
+
+(set-default-font "Monospace:pixelsize=14")
+(set-fontset-font (frame-parameter nil 'font) 'han
+                (font-spec :family "AR PL New Sung" :size 20))
+(set-fontset-font (frame-parameter nil 'font) 'kana
+                  (font-spec :family "Sazanami Mincho" :size 20))
+
+(setq display-time-24hr-format t)
+(display-time)
+
+(set-default 'frame-title-format
+             (list "" "emacs" "@" (getenv "USERNAME") " : %f" ))
+
+;;(menu-bar-mode -1)        ;hide menu-bar
+;;(scroll-bar-mode -1)      ;hide scroll-bar
+(tool-bar-mode -1)          ;hide tool-bar
+
+(fset 'yes-or-no-p 'y-or-n-p)
+
+(setq-default indent-tabs-mode nil)
+(setq default-tab-width 4)
+
+(global-set-key (kbd "TAB") 'my-insert-tab)
+(defun my-insert-tab ()
+  (interactive)
+  (if (looking-at " ")
+      (insert "    ")
+      (indent-for-tab-command))
+)
+
+;;(global-linum-mode 1)
+
+(global-font-lock-mode t)
+(setq font-lock-maximum-decoration t)
+
+(auto-image-file-mode)
+
+(defun w32-restore-frame ()
+    "Restore a minimized frame"
+     (interactive)
+     (w32-send-sys-command 61728))
+
+(defun w32-maximize-frame ()
+    "Maximize the current frame"
+    (interactive)
+    (w32-send-sys-command 61488))
+
+;;(w32-maximize-frame)
+
+(setq default-major-mode 'text-mode)
+
+(setq hs-minor-mode-prefix [(control o)])
+
+(set-scroll-bar-mode nil)   ; no scroll bar, even in x-window system (recommended)
+
+;;(require 'setnu)
+;;(setnu-mode)
+;;(add-hook 'text-mode-hook 'turn-on-setnu-mode)
+(add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
+(add-hook 'c-mode-hook '(lambda () (interactive)
+            (c-set-style "stroustrup") (imenu-add-menubar-index) ) )
+(add-hook 'emacs-lisp-mode-hook '(lambda () (interactive)
+            (imenu-add-menubar-index) ) )
+(add-hook 'c++-mode-hook '(lambda () (interactive)
+            (c-set-style "stroustrup") (imenu-add-menubar-index) ) )
+(add-hook 'python-mode-hook '(lambda () (interactive)
+            (imenu-add-menubar-index) ) )
+;;(require 'csharp-mode)
+(add-hook 'csharp-mode-hook '(lambda ()
+                              (setq c-basic-offset 4
+                                    tab-width 4
+                                    indent-tabs-mode nil
+                                    c-set-style "stroustrup")))
+(setq auto-mode-alist (cons '("\\.cs$" . csharp-mode) auto-mode-alist))
+(autoload 'csharp-mode "csharp-mode" "C# editing mode." t)
+
+(require 'which-func)
+(which-func-mode 1)
+(setq which-func-unknown "<unknown function>")
+
+(require 'align)
+(global-set-key "\C-x\C-j" 'align)
+
+(require 'mouse)
+(defun wcy-mark-some-thing-at-point()
+  (interactive)
+  (let* ((from (point))
+         (a (mouse-start-end from from 1))
+         (start (car a))
+         (end (cadr a))
+         (goto-point (if (= from start) end start)))
+    (if (eq last-command 'wcy-mark-some-thing-at-point)
+        (progn
+          ;; exchange mark and point
+          (goto-char (mark-marker))
+          (set-marker (mark-marker) from))
+      (push-mark (if (= goto-point start) end start) nil t)
+      (when (and (interactive-p) (null transient-mark-mode))
+        (goto-char (mark-marker))
+        (sit-for 0 500 nil))
+      (goto-char goto-point))))
+(define-key global-map (kbd "M-C-j") 'wcy-mark-some-thing-at-point)
+
+(define-key isearch-mode-map (kbd "M-i") 'isearch-query-replace-current)
+(defun isearch-query-replace-current ()
+  "replace current searching string."
+  (interactive)
+  (let ((case-fold-search isearch-case-fold-search)
+        (from-string isearch-string))
+    (if (not isearch-success)
+        (message "search string not found")
+      (progn
+        (isearch-exit)
+        (goto-char (min (point) isearch-other-end)))
+      ;;(isearch-abort)
+      (perform-replace
+       from-string
+       (read-from-minibuffer (format "Query replace %s with: " from-string) "" nil nil query-replace-to-history-variable from-string t)
+       t                                ; query flag
+       isearch-regexp
+       nil))))
+
+
+(require 'redo)
+(global-set-key (kbd "M-z") 'redo)
+
+;;(global-set-key [(control ?\;)] 'semantic-ia-complete-symbol-menu)
+
+(defun jacob-refresh-buffer()
+     "refresh buffer"
+     (interactive)
+     ;;(setnu-mode)
+     (revert-buffer))
+
+(global-set-key [f1] 'recenter)
+(global-set-key [f2] 'other-window)
+(global-set-key [f3] 'delete-region)
+(global-set-key [f4] 'kill-this-buffer)
+(global-set-key [f5] 'jacob-refresh-buffer)
+(global-set-key [f6] 'goto-line)
+(global-set-key [f12] 'highlight-80+-mode)
+
+(require 'ibuffer)
+(global-set-key (kbd "C-x C-b") 'ibuffer)
+
+(require 'ibuf-ext)
+(setq ibuffer-mode-hook
+      (lambda ()
+        (setq ibuffer-filter-groups
+              '(
+                ("*buffer*" (name . "\\*.*\\*"))
+                ("*dired*" (mode . dired-mode))
+                ("tex" (mode . latex-mode))
+                ("org" (mode . org-mode))
+                ("php" (or (mode . php-mode)
+                           (mode . html-mode)))
+                ("text" (mode . text-mode))
+                ("muse" (mode . muse-mode))
+                ("elisp" (or (mode . emacs-lisp-mode)
+                             (mode . lisp-interaction-mode)))
+                ("c/c++" (or (mode . c++-mode)
+                            (mode . c-mode)))
+                ("java" (mode . jde-mode))
+                ("python" (mode . python-mode))
+                ("erlang" (mode . erlang-mode))
+                ("shell" (mode . shell-script-mode))
+                ("matlab" (mode . matlab-mode))
+                ("makefile" (or (mode . makefile-mode)
+                                (mode . makefile-gmake-mode)
+                                (mode . makefile-bsdmake-mode)
+                                (mode . makefile-automake-mode)))
+
+))))
+
+;;(require 'cua)
+;;(CUA-mode t)
+
+(global-set-key [(control ?\.)] 'ska-point-to-register)
+(global-set-key [(control ?\,)] 'ska-jump-to-register)
+(defun ska-point-to-register()
+  "Store cursorposition _fast_ in a register.
+Use ska-jump-to-register to jump back to the stored
+position."
+  (interactive)
+  (setq zmacs-region-stays t)
+  (point-to-register 8))
+
+(defun ska-jump-to-register()
+  "Switches between current cursorposition and position
+that was stored with ska-point-to-register."
+  (interactive)
+  (setq zmacs-region-stays t)
+  (let ((tmp (point-marker)))
+        (jump-to-register 8)
+        (set-register 8 tmp)))
+
+(setq delete-auto-save-files t)
+
+(setq auto-mode-alist (cons '("\\.py$" . python-mode) auto-mode-alist))
+(setq interpreter-mode-alist (cons '("python" . python-mode)
+                                    interpreter-mode-alist))
+(autoload 'python-mode "python-mode" "Python editing mode." t)
+
+(setq auto-mode-alist (cons '("\\.erl$" . erlang-mode) auto-mode-alist))
+(autoload 'erlang-mode "erlang-mode" "Erlang editing mode." t)
+
+;; Standard org stuff
+(setq load-path (cons "~/site-lisp/org-6.30/lisp" load-path))
+(add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
+(global-set-key "\C-cl" 'org-store-link)
+(global-set-key "\C-ca" 'org-agenda)
+;; Custom keywords
+;;(setq org-todo-keywords
+;;         '((type "NEXT" "GOAL" "WAITING" "DELEGATED" "SOMEDAY" "|" "DONE")
+;;     (sequence "QUESTION" "|" "ANSWERED")
+;;     (sequence "|" "CANCELED")))
+(setq org-hide-leading-stars t)    ; only show one *
+(setq org-log-done t)      ; add CLOSED when complete item
+(setq org-deadline-warning-days 14)
+(setq org-startup-folded 'showall)  ; Best default for small files with tables
+(setq org-display-custom-times t)
+(setq org-time-stamp-custom-formats "%y%m%d %A %H:%M:%S")
+
+(require 'tabbar)
+(tabbar-mode)
+;;(global-set-key [(control f11)] 'tabbar-local-mode)
+;;(global-set-key [(control shift tab)] 'tabbar-backward)
+;;(global-set-key [(control tab)]       'tabbar-forward)
+
+(require 'wcy-swbuff)
+(global-set-key [(control tab)] 'wcy-switch-buffer-forward)
+(global-set-key [(control shift tab)] 'wcy-switch-buffer-backward)
+
+
+(defun my-tabbar-buffer-groups (buffer)
+  "Return the list of group names BUFFER belongs to.
+Return only one group for each buffer."
+  (with-current-buffer (get-buffer buffer)
+    (cond
+     ((or (get-buffer-process (current-buffer))
+          (memq major-mode
+                '(comint-mode compilation-mode)))
+      '("Process")
+      )
+     ((member (buffer-name)
+              '("*scratch*" "*Messages*"))
+      '("Common")
+      )
+     ((eq major-mode 'dired-mode)
+      '("Dired")
+      )
+     ((memq major-mode
+            '(help-mode apropos-mode Info-mode Man-mode))
+      '("Help")
+      )
+     ((memq major-mode
+            '(rmail-mode
+              rmail-edit-mode vm-summary-mode vm-mode mail-mode
+              mh-letter-mode mh-show-mode mh-folder-mode
+              gnus-summary-mode message-mode gnus-group-mode
+              gnus-article-mode score-mode gnus-browse-killed-mode))
+      '("Mail")
+      )
+     ((memq major-mode
+            '(c-mode c++-mode))
+      '("C/C++")
+      )
+     (t
+      (list
+       (if (and (stringp mode-name) (string-match "[^ ]" mode-name))
+           mode-name
+         (symbol-name major-mode)))
+      )
+     )))
+
+
+(setq tabbar-buffer-groups-function
+      'my-tabbar-buffer-groups)
+
+(require 'color-theme)
+(color-theme-initialize)
+;;(require 'colorful-obsolescence)
+;;(color-theme-colorful-obsolescence)
+(color-theme-deep-blue)
+
+
+(defun my-one-blank-line-end ()
+"Leave exactly one blank line at the end of the file."
+ (interactive)
+ (save-excursion
+     (goto-char (point-max))
+     (open-line 1)
+     (delete-blank-lines)))
+
+(setq whitespace-check-indent-whitespace nil) ; don't touch my indent tabs
+(defun my-write-file-hook ()
+  (whitespace-cleanup)                  ; delelte trailing blanks/tabs.
+  (my-one-blank-line-end))              ; leave one line in the end.
+
+(add-hook 'write-file-hooks 'my-write-file-hook)
+
+(defun dpp-beginning-of-next-defun ()
+    "Move to beginning of next defun"
+    (interactive)
+    (c-end-of-defun)
+    (c-end-of-defun)
+    (beginning-of-defun)
+    )
+
+(defun dpp-beginning-of-prev-defun ()
+    "Move to beginning of previous defun"
+    (interactive)
+    (beginning-of-defun)
+    )
+
+(global-set-key [f10] 'dpp-beginning-of-next-defun)
+(global-set-key [(C-f10)] 'dpp-beginning-of-prev-defun)
+
+(defun scroll-n-lines-ahead (&optional n)
+  "Scroll ahead N lines (1 by default)."
+  (interactive "P")
+  (scroll-ahead (prefix-numeric-value n)))
+
+(defun scroll-n-lines-behind (&optional n)
+  "Scroll behind N lines (1 by default)."
+  (interactive "P")
+  (scroll-behind (prefix-numeric-value n)))
+
+;;(global-set-key [M-up]   'scroll-n-lines-behind)
+;;(global-set-key [M-down] 'scroll-n-lines-ahead)
+
+;; Useful function for inserting date quickly
+(defun my-insert-date ()
+  (interactive)
+  (insert (format-time-string "%y%m%d")))
+(global-set-key "\C-ct" 'my-insert-date)
+
+
+(require 'ido)
+(ido-mode t)
+
+(require 'table)
+(add-hook 'text-mode-hook 'table-recognize)
+(autoload 'table-insert "table" "WYGIWYS table editor")
+
+(show-paren-mode)
+(global-set-key "%" 'match-paren)
+
+(defun match-paren (arg)
+  "Go to the matching paren if on a paren; otherwise insert %."
+  (interactive "p")
+  (cond ((looking-at "\\s\(") (forward-list 1) (backward-char 1))
+    ((looking-at "\\s\)") (forward-char 1) (backward-list 1))
+    (t (self-insert-command (or arg 1)))))
+
+;(require 'folding)
+;(declare (special fold-fold-on-startup
+;          fold-keys-already-setup
+;          ))
+
+;(setq fold-fold-on-startup t)
+;(folding-mode-add-find-file-hook)
+;(folding-mode-add-find-file-hook)
+
+;(setq fold-keys-already-setup nil)
+;(add-hook 'folding-mode-hook
+;      (function (lambda()
+;              (unless fold-keys-already-setup
+;            (setq fold-keys-already-setup t)
+;            (define-prefix-command 'ctl-f-folding-mode-prefix)
+;            (define-key 'ctl-f-folding-mode-prefix "f" 'fold-fold-region)
+;            (define-key  'ctl-f-folding-mode-prefix "e" 'fold-enter)
+;            (define-key 'ctl-f-folding-mode-prefix "x" 'fold-exit)
+;            (define-key  'ctl-f-folding-mode-prefix "b" 'fold-whole-buffer)
+;            (define-key 'ctl-f-folding-mode-prefix "o" 'fold-open-buffer)
+;            (define-key 'ctl-f-folding-mode-prefix "h" 'fold-hide)
+;            (define-key 'ctl-f-folding-mode-prefix "s" 'fold-show)
+;            (define-key 'ctl-f-folding-mode-prefix "t" 'fold-top-level)
+;            (define-key 'ctl-f-folding-mode-prefix "f" 'fold-fold-region)
+;            )
+;              (local-set-key "\C-f" 'ctl-f-folding-mode-prefix))))
+
+;(fold-add-to-marks-list 'sgml-mode
+;            "<!-- {"
+;            "<!-- } -->" " --> ")
+;(fold-add-to-marks-list 'c-mode "/* <" "/* > */" "*/")
+;(fold-add-to-marks-list 'c++-mode
+;            "//<" "//>" "")
+;(fold-add-to-marks-list 'LaTeX-mode "%%% {{{" "%%% }}}" " ")
+;(fold-add-to-marks-list 'latex2e-mode "%%% {{{" "%%% }}}" " ")
+;(fold-add-to-marks-list 'latex-mode "%%%% {{{" "%%%% }}}" " ")
+;(fold-add-to-marks-list 'BibTeX-mode "%%% {{{" "%%% }}}" " ")
+;(fold-add-to-marks-list 'lisp-mode ";;; {" ";;; }" "")
+;(fold-add-to-marks-list 'lex-mode" /* {{{ " " /* }}} */ " "*/")
+;(fold-add-to-marks-list 'html-mode "<!-- { " "<!-- } -->" "-->")
+;(fold-add-to-marks-list 'shell-script-mode "# {{{" "# }}}" nil)
+;(fold-add-to-marks-list 'sh-mode "# {{{ " "# }}}" nil)
+
+(require 'ctypes)
+(ctypes-auto-parse-mode 1)
+
+(setq default-fill-column 80)
+
+;; backup policies
+(setq make-backup-files t)
+(setq version-control t)
+(setq kept-old-versions 2)
+(setq kept-new-versions 5)
+(setq delete-old-versions t)
+(setq backup-directory-alist '(("" . "~/bk")))
+
+(setq-default truncate-partial-width-windows nil)
+
+(setq kill-ring-max 100)
+
+(setq c-hungry-delete-key t)
+
+;;(defun my-indent-or-complete ()
+;;   (interactive)
+;;   (if (looking-at "\\>")
+;;    (hippie-expand nil)
+;;    (indent-for-tab-command))
+;; )
+
+;;(global-set-key [(control tab)] 'my-indent-or-complete)
+
+(global-set-key [(control ?\;)] 'hippie-expand)
+(setq hippie-expand-try-functions-list
+      '(try-expand-dabbrev
+        try-expand-dabbrev-visible
+        try-expand-dabbrev-all-buffers
+        try-expand-dabbrev-from-kill
+        senator-try-expand-semantic
+        try-complete-file-name-partially
+        try-complete-file-name
+        try-expand-all-abbrevs
+        try-expand-list
+        try-expand-line
+        try-complete-lisp-symbol-partially
+        try-complete-lisp-symbol))
+
+(require 'dabbrev-expand-multiple)
+(global-set-key "\M-/" 'dabbrev-expand-multiple)
+(setq dabbrev-expand-multiple-select-keys '("a" "s" "d" "f" "g" "h" "j" "k" "l" ))
+(add-to-list 'dabbrev-expand-multiple-multi-selection-keys "m")
+(add-to-list 'dabbrev-expand-multiple-next-keys "n")
+(add-to-list 'dabbrev-expand-multiple-previous-keys "p")
+(setq dabbrev-expand-multiple-tooltip-timeout 2000)
+(setq dabbrev-expand-multiple-tooltip-timeout 10)
+(setq dabbrev-expand-multiple-tooltip-params
+      '((foreground-color . "HotPink")
+        (background-color . "SeaGreen")
+        (border-color . "black")))
+(setq dabbrev-expand-multiple-highlight-face 'highlight)
+(setq dabbrev-expand-multiple-inline-show-face 'underline)
+(setq dabbrev-expand-multiple-inline-show-face nil)
+(setq dabbrev-expand-multiple-use-tooltip t)
+
+
+(require 'smart-compile)
+
+;;   %F  absolute pathname            ( /usr/local/bin/netscape.bin )
+;;   %f  file name without directory  ( netscape.bin )
+;;   %n  file name without extention  ( netscape )
+;;   %e  extention of file name       ( bin )
+
+(global-set-key [(control up)] 'smart-compile)
+(global-set-key [(control down)] 'smart-run)
+
+(global-set-key [(control left)] (lambda() (interactive)
+   (n-p-command ((next-error))
+                ((n (next-error))
+                 (p (previous-error)))
+                )))
+
+(define-skeleton skeleton-include
+  "generate include<>" ""
+  > "#include <"
+  (completing-read "Include File:"
+                   (mapcar #'(lambda (f) (list f ))
+                           (apply 'append
+                                  (mapcar
+                                   #'(lambda (dir)
+                                       (directory-files dir))
+                                   (list "/usr/include"
+                                         "/usr/local/include"
+                                         "/usr/include/g++-3")))))
+  ">")
+
+(require 'dired-single)
+(defun my-dired-init()
+(define-key dired-mode-map [return] 'joc-dired-single-buffer)
+(define-key dired-mode-map (kbd "^")   '(lambda () (interactive)
+            (joc-dired-single-buffer ".."))))
+
+(add-hook 'dired-load-hook 'my-dired-init)
+
+(setq dired-recursive-copies 'top)
+(setq dired-recursive-deletes 'top)
+
+(global-set-key (kbd "C-c j") 'imenu)
+
+
+;;(mouse-avoidance-mode 'cat-and-mouse)
+
+(require 'moccur-edit)
+(setq dmoccur-mask '("\\.c" "\\.cc" "\\.cpp" "\\.h" "\\.hpp" "\\.java" "\\.py" ))
+(setq dmoccur-exclusion-mask '("\\.cache" "\\.out" "\\.svn-base"))
+
+(global-auto-revert-mode 1)
+
+(require 'wdired)
+(autoload 'wdired-change-to-wdired-mode "wdired")
+(add-hook 'dired-load-hook
+          '(lambda ()
+             (define-key dired-mode-map "r" 'wdired-change-to-wdired-mode)
+             (define-key dired-mode-map
+               [menu-bar immediate wdired-change-to-wdired-mode]
+               '("Edit File Names" . wdired-change-to-wdired-mode))))
+
+(defun wy-go-to-char (n char)
+  "Move forward to Nth occurence of CHAR.
+Typing `wy-go-to-char-key' again will move forwad to the next Nth
+occurence of CHAR."
+  (interactive "p\ncGo to char: ")
+  (search-forward (string char) nil nil n)
+  (while (char-equal (read-char)
+         char)
+    (search-forward (string char) nil nil n))
+  (setq unread-command-events (list last-input-event)))
+
+;;(define-key global-map (kbd "C-c a") 'wy-go-to-char)
+
+(require 'browse-kill-ring)
+(global-set-key [(control c)(k)] 'browse-kill-ring)
+(browse-kill-ring-default-keybindings)
+
+(require 'xcscope)
+(setq cscope-do-not-update-database t)
+
+;;(setq load-path (cons  "d:/Program Files/erl5.7.1/lib/tools-2.6.4/emacs"
+;;      load-path))
+;;(setq erlang-root-dir "d:/Program Files/erl5.7.1")
+;;(setq exec-path (cons "d:/Program Files/erl5.7.1/bin" exec-path))
+
+
+;; Load CEDET
+(load-file "~/site-lisp/cedet-1.0pre6/common/cedet.el")
+
+;; Enabling various SEMANTIC minor modes.  See semantic/INSTALL for more ideas.
+;; Select one of the following:
+
+;; * This enables the database and idle reparse engines
+;;(semantic-load-enable-minimum-features)
+
+;; * This enables some tools useful for coding, such as summary mode
+;;   imenu support, and the semantic navigator
+(semantic-load-enable-code-helpers)
+
+;; * This enables even more coding tools such as the nascent intellisense mode
+;;   decoration mode, and stickyfunc mode (plus regular code helpers)
+;; (semantic-load-enable-guady-code-helpers)
+
+;; * This turns on which-func support (Plus all other code helpers)
+;; (semantic-load-enable-excessive-code-helpers)
+
+;; This turns on modes that aid in grammar writing and semantic tool
+;; development.  It does not enable any other features such as code
+;; helpers above.
+;; (semantic-load-enable-semantic-debugging-helpers)
+
+(add-to-list 'load-path
+                   "~/site-lisp/ecb-2.40")
+
+(require 'ecb)
+(require 'ecb-autoloads)
+
+(setq ecb-acto-compatibility-check nil)
+
+(setq ecb-compile-window-height 8)
+(setq ecb-compilation-buffer-names (quote (("*Calculator*") ("*vc*") ("*vc-diff*") ("*Apropos*") ("*Occur*") ("*shell*") ("\\*[cC]ompilation.*\\*" . t) ("\\*i?grep.*\\*" . t) ("*JDEE Compile Server*") ("*Help*") ("*Completions*") ("*Backtrace*") ("*Compile-log*") ("*bsh*") ("*Messages*") ("*Python*"))))
+
+(setq ecb-tip-of-the-day nil)
+
+(setq ecb-layout-name "leftright2")
+(setq ecb-windows-width 0.2)
+
+(custom-set-variables
+ '(ecb-options-version "2.40"))
+
+(add-to-list 'load-path
+                  "~/site-lisp/yasnippet-0.6.1b")
+(require 'yasnippet)
+(yas/initialize)
+(yas/load-directory "~/site-lisp/yasnippet-0.6.1b/snippets")
+
+(setq load-path (cons  "/usr/lib/erlang/lib/tools-2.6.1/emacs"
+                       load-path))
+(setq erlang-root-dir "/usr/lib/erlang")
+(setq exec-path (cons "/usr/lib/erlang/bin" exec-path))
+(require 'erlang-start)
+
+
+;;Load lisp integration mode
+;;(setq inferior-lisp-program "clisp")
+;;(require 'slime)
+;; work around bug in SLIME: nonexistent fn 'slime-quit
+;;(define-key slime-repl-mode-map (kbd "C-c M-g") #'slime-quit-lisp)
+
+;;; Muse Setup
+
+;; Initialize
+;;(require 'outline)       ; I like outline-style faces
+;;(require 'muse)          ; load generic module
+;;(require 'muse-colors)   ; load coloring/font-lock module
+;;(require 'muse-mode)     ; load authoring mode
+;;(require 'muse-blosxom)  ; load blosxom module
+;;(require 'muse-docbook)  ; load DocBook publishing style
+;;(require 'muse-html)     ; load (X)HTML publishing style
+;;(require 'muse-latex)    ; load LaTeX/PDF publishing styles
+;;(require 'muse-latex2png) ; publish <latex> tags
+;;(require 'muse-project)  ; load support for projects
+;;(require 'muse-texinfo)  ; load Info publishing style
+;;(require 'muse-wiki)     ; load Wiki support
+;;(require 'muse-xml)      ; load XML support
+
+;; Setup projects
+
+;; Here is an example of making a customized version of your favorite
+;; publisher.  All this does is run `my-muse-blosoxm-finalize' on the
+;; published file immediately after saving it.
+;;(muse-derive-style "my-blosxom" "blosxom-xhtml"
+;;                   :final 'my-muse-blosxom-finalize)
+
+;; This turns relative links into absolute links
+;;(muse-derive-style "my-pdf" "pdf"
+;;                   :before 'my-muse-pdf-prepare-buffer)
+
+;; This uses a different header and footer than normal
+;;(muse-derive-style "my-xhtml" "xhtml"
+;;                   :header "~/personal-site/muse/header.html"
+;;                   :footer "~/personal-site/muse/footer.html")
+
+;; Define a draft style which provides extra space between sections
+;;(defvar muse-latex-draft-markup-strings
+;;  '((chapter      . "\\bigskip\n\\bigskip\n\\chapter{")
+;;    (section      . "\\bigskip\n\\bigskip\n\\section{")
+;;    (subsection   . "\\bigskip\n\\bigskip\n\\subsection{")
+;;    (subsubsection . "\\bigskip\n\\bigskip\n\\subsubsection{"))
+;;  "Strings used for marking up Latex draft text.")
+
+;;(muse-derive-style "latex-draft" "latex"
+;;                   :strings 'muse-latex-draft-markup-strings)
+;;(muse-derive-style "pdf-draft" "latex-draft"
+;;                   :final   'muse-latex-pdf-generate
+;;                   :browser 'muse-latex-pdf-browse-file
+;;                   :link-suffix 'muse-latex-pdf-extension
+;;                   :osuffix 'muse-latex-pdf-extension)
+
+;; Define a style with unnumbered titles
+
+;;(defvar muse-latex-uh-markup-strings
+;;   '((chapter      . "\\chapter*{")
+;;     (section      . "\\section*{")
+;;     (subsection   . "\\subsection*{")
+;;     (subsubsection . "\\subsubsection*{"))
+;;  "Strings used for marking up Latex text with unnumbered headings.")
+
+;;(muse-derive-style "latex-uh" "latex"
+;;                   :strings 'muse-latex-uh-markup-strings)
+;;(muse-derive-style "pdf-uh" "latex-uh"
+;;                   :final   'muse-latex-pdf-generate
+;;                   :browser 'muse-latex-pdf-browse-file
+;;                   :link-suffix 'muse-latex-pdf-extension
+;;                   :osuffix 'muse-latex-pdf-extension)
+
+;; Here is my master project listing.
+
+;;(setq muse-project-alist
+;;      `(
+;;        ("Website" ("~/proj/wiki/web/" "~/proj/wiki/web/testdir/"
+;;                    :force-publish ("WikiIndex")
+;;                    :default "WelcomePage")
+;;         (:base "my-xhtml"
+;;                :base-url "http://mwolson.org/web/"
+;;                :include "/web/[^/]+"
+;;                :path "~/personal-site/site/web")
+;;         (:base "my-pdf"
+;;                :base-url "http://mwolson.org/web/"
+;;                :path "~/personal-site/site/web"
+;;                :include "/\\(CurriculumVitae\\|BriefResume\\)[^/]*$"))
+;;        ("Projects" ("~/proj/wiki/projects/"
+;;                     :force-publish ("WikiIndex" "MuseQuickStart")
+;;                     :default "WelcomePage")
+;;         (:base "my-xhtml"
+;;                :base-url "http://mwolson.org/projects/"
+;;                :path "~/personal-site/site/projects"))
+;;        ))
+
+;; Wiki settings
+;;(setq muse-wiki-interwiki-alist
+;;      '(("EmacsWiki" . "http://www.emacswiki.org/cgi-bin/wiki/")
+;;        ("PAC" . "http://web.ics.purdue.edu/~pac/")))
+
+;;; Functions
+
+;; Turn relative links into absolute ones
+;;(defun my-muse-pdf-make-links-absolute (str &rest ignored)
+;;  "Make relative links absolute."
+;;  (when str
+;;    (save-match-data
+;;      (if (string-match "\\`[/.]+" str)
+;;          (replace-match "http://mwolson.org/" nil t str)
+;;        str))))
+
+;; Make sure my interproject links become absolute when published in
+;; PDFs
+;;(defun my-muse-pdf-prepare-buffer ()
+;;  (set (make-local-variable 'muse-publish-url-transforms)
+;;       (cons 'my-muse-pdf-make-links-absolute muse-publish-url-transforms)))
+
+;; Switch to the given project and prompt for a file
+;;(defun my-muse-project-find-file (project)
+;;  (interactive)
+;;  (let ((muse-current-project (muse-project project)))
+;;    (call-interactively 'muse-project-find-file)))
+
+;;(defun my-muse-blosxom-finalize (file output-path target)
+;;  (my-muse-prepare-entry-for-xanga output-path)
+;; For now, do nothing.
+;;  )
+
+;; Turn a word or phrase into a clickable Wikipedia link
+;;(defun my-muse-dictize (beg end)
+;;  (interactive "r")
+;;  (let* ((text (buffer-substring-no-properties beg end))
+;;         (link (concat "dict:" (replace-regexp-in-string " " "_" text t t))))
+;;    (delete-region beg end)
+;;    (insert "[[" link "][" text "]]")))
+
+;;(defun my-muse-surround-math (&optional beg end)
+;;  "If a region is higlighted, surround it with <math>...</math>.
+;;If no region is highlighted, insert <math></math> and leave the point
+;;between the two tags."
+;;  (interactive (list (ignore-errors (mark)) (point)))
+;;  (if (and beg end)
+;;      (save-restriction
+;;        (narrow-to-region beg end)
+;;        (goto-char (point-min))
+;;        (insert "<math>")
+;;        (goto-char (point-max))
+;;        (insert "</math>"))
+;;    (insert "<math>")
+;;    (save-excursion (insert "</math>"))))
+
+;;(defun my-muse-cdotize-region (beg end)
+;;  (interactive "r")
+;;  (save-restriction
+;;    (narrow-to-region beg end)
+;;    (goto-char (point-min))
+;;    (while (re-search-forward " *\\* *" nil t)
+;;      (replace-match " \\\\cdot "))))
+
+;;; Custom variables
+
+;;(custom-set-variables
+;; '(muse-blosxom-base-directory "~/proj/wiki/blog/")
+;; '(muse-colors-autogen-headings (quote outline))
+;; '(muse-colors-inline-image-method (quote muse-colors-use-publishing-directory))
+;; '(muse-completing-read-function (quote ido-completing-read))
+;; '(muse-html-charset-default "utf-8")
+;; '(muse-html-encoding-default (quote utf-8))
+;; '(muse-html-footer "~/personal-site/muse/generic-footer.html")
+;; '(muse-html-header "~/personal-site/muse/generic-header.html")
+;; '(muse-html-meta-content-encoding (quote utf-8))
+;; '(muse-html-style-sheet "<link rel=\"stylesheet\" type=\"text/css\" charset=\"utf-8\" media=\"all\" href=\"/common.css\" />
+;;<link rel=\"stylesheet\" type=\"text/css\" charset=\"utf-8\" media=\"screen\" href=\"/screen.css\" />
+;;<link rel=\"stylesheet\" type=\"text/css\" charset=\"utf-8\" media=\"print\" href=\"/print.css\" />")
+;; '(muse-latex-header "~/personal-site/muse/header.tex")
+;; '(muse-mode-hook (quote (flyspell-mode footnote-mode)))
+;; '(muse-publish-comments-p t)
+;; '(muse-publish-desc-transforms (quote (muse-wiki-publish-pretty-title muse-wiki-publish-pretty-interwiki muse-publish-strip-URL)))
+;; '(muse-wiki-publish-small-title-words (quote ("the" "and" "at" "on" "of" "for" "in" "an" "a" "page")))
+;; '(muse-xhtml-footer "~/personal-site/muse/generic-footer.html")
+;; '(muse-xhtml-header "~/personal-site/muse/generic-header.html")
+;; '(muse-xhtml-style-sheet "<link rel=\"stylesheet\" type=\"text/css\" charset=\"utf-8\" media=\"all\" href=\"/common.css\" />
+;;<link rel=\"stylesheet\" type=\"text/css\" charset=\"utf-8\" media=\"screen\" href=\"/screen.css\" />
+;;<link rel=\"stylesheet\" type=\"text/css\" charset=\"utf-8\" media=\"print\" href=\"/print.css\" />"))
+;;(custom-set-faces
+;; '(muse-bad-link ((t (:foreground "DeepPink" :underline "DeepPink" :weight bold)))))
+
+;;; muse-init.el ends here
+
+;---Save the State of Emacs to be Loaded next time it is started---
+(defun gk-state-saver ()
+;;Save names and cursor positions of all loaded files in ".emacs.files"
+  (interactive)
+  (setq fname (format "%semacs.files" gk-startdir))
+  (cond
+   ((buffer-file-name)
+    (setq currentbuffer (buffer-name)))
+   (t
+    (setq currentbuffer nil)))
+  (cond
+   ((y-or-n-p (format "Save state to %s? " fname))
+  (switch-to-buffer "*state-saver*")
+  (kill-buffer "*state-saver*")
+  (switch-to-buffer "*state-saver*")
+  (setq bl (buffer-list))
+  (while bl
+    (setq buffer (car bl))
+    (setq file (buffer-file-name buffer))
+    (cond
+     (file
+    (insert "(find-file \"" file "\")\n")
+    (switch-to-buffer buffer)
+    (setq mypoint (point))
+    (switch-to-buffer "*state-saver*")
+    (insert (format "(goto-char %d)\n" mypoint))))
+    (setq bl (cdr bl)))
+  (cond
+   (currentbuffer
+    (insert (format "(switch-to-buffer \"%s\")\n" currentbuffer))))
+  (set-visited-file-name fname)
+  (save-buffer)
+  (kill-buffer "emacs.files")
+  (cond
+   (currentbuffer
+    (switch-to-buffer currentbuffer))))))
+
+
+;--- Save state when killing emacs ----------
+(add-hook
+ 'kill-emacs-hook
+ '(lambda ()
+    (gk-state-saver)))
+
+;--- Remember from where emacs was started --
+(defvar gk-startdir "~//")
+(message "state save directory is: %s" gk-startdir)
+;(sleep-for 1)
+
+
+;--- Load files from .emacs.files -----------
+(cond
+ ((file-exists-p (format "%semacs.files" gk-startdir))
+  (load-file (format "%semacs.files" gk-startdir))))
+
+
+
+;;(require 'anything-config)
+(require 'highlight-80+)
+(autoload 'highlight-80+-mode "highlight-80+"
+      "highlight-80+."
+      t nil)
+
+
+;;;###autoload
+(defun my-insert-char-next-line (arg)
+  "insert char below the cursor"
+  (interactive "p")
+  (let ((col (current-column))
+        char)
+    (setq char
+          (save-excursion
+            (forward-line arg)
+            (move-to-column col)
+            (if (= (current-column) col)
+                (char-after))))
+    (if char
+        (insert-char char 1)
+      (message (concat "Can't get charactor in "
+                       (if  (< arg 0)
+                           "previous"
+                         "next")
+                       (progn (setq arg (abs arg))
+                              (if (= arg 1) ""
+                                (concat " " (number-to-string arg))))
+                       " line.")))))
+
+;;;###autoload
+(defun my-insert-char-prev-line (arg)
+  "insert char above the cursor"
+  (interactive "p")
+  (my-insert-char-next-line (- arg)))
+
+(global-set-key (kbd "C-8") 'my-insert-char-next-line)
+(global-set-key (kbd "C-9") 'my-insert-char-prev-line)
+
+(require 'w32-browser)
+(eval-after-load "dired"
+  '(define-key dired-mode-map [f4] (lambda ()
+           (interactive)
+           (w32-browser
+           (dired-replace-in-string
+           "/" "\\"
+           (dired-get-filename))))))
+
+(require 'doc-mode)
+(define-key c-mode-map "\C-cd" 'doc-mode-fix-tag-doc)
+(define-key c-mode-map "\C-cr" 'doc-mode-remove-tag-doc)
+(setq doc-mode-template-start "/******************************************************************************")
+(setq doc-mode-template-end   " ******************************************************************************/")
+
+;;like vim-"*"
+(defvar my-isearch-word "")
+
+(defun my-isearch-word ()
+  (interactive)
+  (when (not mark-active)
+    (let (word-beg word-end)
+      (unless (looking-at "\\<")
+        (if (eq (char-syntax (char-after)) ?w)
+            (backward-word)
+          (and (forward-word) (backward-word)))
+        )
+      (setq word-beg (point))
+      (forward-word)
+      (setq word-end (point))
+      (setq my-isearch-word (filter-buffer-substring word-beg word-end nil t))
+      (backward-word)
+      )
+    (when (> (length my-isearch-word) 0)
+      (setq my-isearch-word (concat "\\<" my-isearch-word "\\>"))
+      (isearch-update-ring my-isearch-word t)
+      (add-hook 'isearch-mode-end-hook 'my-isearch-word-end-hook)
+      (isearch-mode t t)
+      (isearch-repeat 'forward)
+      (message "%s" isearch-string))))
+
+(global-set-key (kbd "C-*") 'my-isearch-word)
+
+(defun my-isearch-word-end-hook ()
+  (remove-hook 'isearch-mode-end-hook 'my-isearch-word-end-hook)
+  (setq my-isearch-word ""))
+
+
+(add-to-list 'load-path "~/site-lisp/ac")
+(require 'auto-complete)
+(require 'ac-dabbrev)
+(require 'auto-complete-yasnippet nil t) ;optional
+(require 'auto-complete-semantic nil t)  ;optional
+(require 'auto-complete-python nil t)     ;optional
+(require 'auto-complete-cpp nil t)     ;optional
+(require 'auto-complete-css nil t)     ;optional
+(require 'auto-complete-emacs-lisp nil t)     ;optional
+
+;; Generic setup.
+(global-auto-complete-mode t)           ;enable global-mode
+;;(setq ac-auto-start t)                  ;automatically start
+(setq ac-auto-start 3)
+(setq ac-dwim t)                        ;Do what i mean
+(setq ac-override-local-map nil)        ;don't override local map
+;;(set-face-background 'ac-menu-face "lightgray")
+;;(set-face-underline 'ac-menu-face "darkgray")
+;;(set-face-background 'ac-selection-face "steelblue")
+(define-key ac-complete-mode-map "\t" 'ac-expand)
+(define-key ac-complete-mode-map "\r" 'ac-complete)
+(define-key ac-complete-mode-map "\M-n" 'ac-next)
+(define-key ac-complete-mode-map "\M-p" 'ac-previous)
+
+;; The mode that automatically startup.
+(setq ac-modes
+      '(emacs-lisp-mode c-mode cc-mode c++-mode java-mode
+                        python-mode javascript-mode php-mode css-mode
+                        makefile-mode sh-mode erlang-mode
+                        org-mode))
+;; (add-to-list 'ac-trigger-commands 'org-self-insert-command) ; if you want enable auto-complete at org-mode, uncomment this line
+
+;; The sources for common all mode.
+(set-default 'ac-sources
+   '(
+     ac-source-yasnippet
+     ac-source-semantic
+     ac-source-imenu
+     ac-source-dabbrev
+     ac-source-abbrev
+     ac-source-words-in-buffer
+     ac-source-files-in-current-dir
+     ac-source-filename
+     ))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Lisp mode ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(add-hook 'emacs-lisp-mode-hook
+             (lambda ()
+               (setq ac-sources '(ac-source-yasnippet ac-source-abbrev
+                                                      ac-source-words-in-buffer ac-source-symbols))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; C-common-mode ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Enables omnicompletion with `c-mode-common'.
+(add-hook 'c-mode-common-hook
+          '(lambda ()
+             (add-to-list 'ac-omni-completion-sources
+                          (cons "\\." '(ac-source-semantic)))
+             (add-to-list 'ac-omni-completion-sources
+                          (cons "->" '(ac-source-semantic)))
+             ))
+
+(require 'window-numbering)
+(window-numbering-mode 1)
+
+(require 'htmlize)
+
+(setq recent-jump-threshold 4)
+(setq recent-jump-ring-length 10)
+(global-set-key (kbd "C-o") 'recent-jump-jump-backward)
+(global-set-key (kbd "M-o") 'recent-jump-jump-forward)
+(require 'recent-jump)
